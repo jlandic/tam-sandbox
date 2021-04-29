@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 use lazy_static::lazy_static;
-use rand::Rng;
-use rand_pcg::Pcg64;
-use std::collections::HashMap;
+use rand::{rngs::StdRng, Rng, SeedableRng};
+use std::collections::BTreeMap;
 use std::f32::consts::PI;
 
 use crate::pcg::universe::{Star, StarClass};
+use crate::plugins::rng::Seed;
 use crate::plugins::std::Position;
 
 const MAX_RANDOM_POSITION_ITERATIONS: u8 = 5;
@@ -19,8 +19,8 @@ const CLASS_K_AMOUNT_RATIO: f32 = 0.1;
 const CLASS_M_AMOUNT_RATIO: f32 = 0.7;
 
 lazy_static! {
-    static ref STAR_CLASS_DISTRIBUTION: HashMap<StarClass, f32> = {
-        let mut m = HashMap::new();
+    static ref STAR_CLASS_DISTRIBUTION: BTreeMap<StarClass, f32> = {
+        let mut m = BTreeMap::new();
         m.insert(StarClass::O, CLASS_O_AMOUNT_RATIO);
         m.insert(StarClass::B, CLASS_B_AMOUNT_RATIO);
         m.insert(StarClass::A, CLASS_A_AMOUNT_RATIO);
@@ -33,12 +33,12 @@ lazy_static! {
 }
 
 pub struct Galaxy {
-    pub stars: HashMap<Position, Star>,
+    pub stars: BTreeMap<Position, Star>,
 }
 
 impl Galaxy {
     pub fn generate(
-        rng: &mut Pcg64,
+        seed: &Seed,
         stars_count: i32,
         gravity: f32,
         radius: f32,
@@ -46,20 +46,23 @@ impl Galaxy {
         arm_spread: f32,
         rotation_strength: f32,
     ) -> Self {
-        let mut stars: HashMap<Position, Star> = HashMap::new();
+        let mut stars: BTreeMap<Position, Star> = BTreeMap::new();
+        let mut rng: StdRng = SeedableRng::seed_from_u64(seed.0);
 
         for (class, ratio) in STAR_CLASS_DISTRIBUTION.iter() {
             for _ in 0..(stars_count as f32 * *ratio).round() as i32 {
-                stars.insert(
-                    Galaxy::random_star_position(
-                        gravity,
-                        radius,
-                        arms_count,
-                        arm_spread,
-                        rotation_strength,
-                    ),
-                    Star::from_class(rng, *class),
+                let position = Galaxy::random_star_position(
+                    &mut rng,
+                    gravity,
+                    radius,
+                    arms_count,
+                    arm_spread,
+                    rotation_strength,
                 );
+
+                let star = Star::from_class(&mut rng, *class);
+
+                stars.insert(position, star);
             }
         }
 
@@ -67,14 +70,13 @@ impl Galaxy {
     }
 
     fn random_star_position(
+        rng: &mut StdRng,
         gravity: f32,
         radius: f32,
         arms_count: u8,
         arm_spread: f32,
         rotation_strength: f32,
     ) -> Position {
-        let mut rng = rand::thread_rng();
-
         let mut v;
         let arm_divisor = PI / arms_count as f32;
         let mut iterations = 1;
@@ -82,7 +84,7 @@ impl Galaxy {
         loop {
             let mut valid = false;
             // Random distance from galaxy center
-            let distance: f32 = rng.gen_range(0.0..1.0);
+            let distance: f32 = rng.gen_range(0.06..1.0);
 
             // Get a random direction, then take the position at `distance` from the galaxy center, in this direction,
             // taking the gravity setting into account.

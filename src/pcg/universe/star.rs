@@ -1,9 +1,5 @@
 use bevy::prelude::Color;
-use rand::{
-    distributions::{Distribution, Standard},
-    Rng,
-};
-use rand_pcg::Pcg64;
+use rand::{rngs::StdRng, Rng};
 
 #[derive(Debug)]
 pub struct Star {
@@ -27,7 +23,7 @@ pub struct Star {
     pub color: Color,
 }
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone, PartialOrd, Ord)]
 pub enum StarClass {
     O,
     B,
@@ -37,21 +33,6 @@ pub enum StarClass {
     K,
     M,
     WhiteDwarf,
-}
-
-impl Distribution<StarClass> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> StarClass {
-        match rng.gen_range(0..=7) {
-            0 => StarClass::O,
-            1 => StarClass::B,
-            2 => StarClass::A,
-            3 => StarClass::F,
-            4 => StarClass::G,
-            5 => StarClass::K,
-            6 => StarClass::M,
-            _ => StarClass::WhiteDwarf,
-        }
-    }
 }
 
 impl Star {
@@ -82,14 +63,14 @@ impl Star {
         let class = Star::class_for_mass(mass);
 
         let color = match class {
-            StarClass::O => Color::rgb_u8(155, 176, 255),
-            StarClass::B => Color::rgb_u8(170, 191, 255),
-            StarClass::A => Color::rgb_u8(202, 215, 255),
-            StarClass::F => Color::rgb_u8(248, 247, 255),
-            StarClass::G => Color::rgb_u8(255, 244, 234),
-            StarClass::K => Color::rgb_u8(255, 210, 161),
-            StarClass::M => Color::rgb_u8(255, 204, 111),
-            StarClass::WhiteDwarf => Color::rgb_u8(155, 176, 255),
+            StarClass::O => Color::rgba_u8(155, 176, 255, 1),
+            StarClass::B => Color::rgba_u8(170, 191, 255, 40),
+            StarClass::A => Color::rgba_u8(202, 215, 255, 100),
+            StarClass::F => Color::rgba_u8(248, 247, 255, 100),
+            StarClass::G => Color::rgba_u8(255, 244, 234, 100),
+            StarClass::K => Color::rgba_u8(255, 210, 161, 150),
+            StarClass::M => Color::rgba_u8(255, 204, 111, 150),
+            StarClass::WhiteDwarf => Color::rgba_u8(155, 176, 255, 50),
         };
 
         Self {
@@ -116,7 +97,7 @@ impl Star {
         }
     }
 
-    pub fn from_class(rng: &mut Pcg64, class: StarClass) -> Self {
+    pub fn from_class(rng: &mut StdRng, class: StarClass) -> Self {
         match class {
             StarClass::O => Self::from_mass(rng.gen_range(16.0..32.0)),
             StarClass::B => Self::from_mass(rng.gen_range(2.1..16.0)),
