@@ -28,7 +28,7 @@ fn spawn_galaxy(mut commands: Commands, seed: Res<Seed>) {
 
     for (position, star) in galaxy.stars {
         let shape = shapes::Circle {
-            radius: star.radius,
+            radius: star.radius(),
             ..shapes::Circle::default()
         };
 
@@ -36,7 +36,7 @@ fn spawn_galaxy(mut commands: Commands, seed: Res<Seed>) {
             .spawn()
             .insert_bundle(GeometryBuilder::build_as(
                 &shape,
-                ShapeColors::outlined(star.color, star.color),
+                ShapeColors::outlined(star.color(), star.color()),
                 DrawMode::Outlined {
                     fill_options: FillOptions::default(),
                     outline_options: StrokeOptions::default().with_line_width(0.0),
