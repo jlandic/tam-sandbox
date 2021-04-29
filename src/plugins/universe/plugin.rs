@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
-use crate::pcg::universe::Galaxy;
+use crate::pcg::universe::{Galaxy, GalaxySettings};
 use crate::plugins::rng::Seed;
 
 pub struct UniversePlugin;
@@ -14,7 +14,17 @@ impl Plugin for UniversePlugin {
 
 fn spawn_galaxy(mut commands: Commands, seed: Res<Seed>) {
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    let galaxy = Galaxy::generate(&seed, 10000, 2.0, 800.0, 8, 0.1, 8.0);
+    let galaxy = Galaxy::generate(
+        &seed,
+        &GalaxySettings {
+            stars_count: 10_000,
+            gravity: 2.0,
+            radius: 800.0,
+            arms_count: 8,
+            arm_spread: 0.1,
+            rotation_strength: 0.8,
+        },
+    );
 
     for (position, star) in galaxy.stars {
         let shape = shapes::Circle {

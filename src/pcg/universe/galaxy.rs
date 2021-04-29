@@ -36,30 +36,24 @@ pub struct Galaxy {
     pub stars: BTreeMap<Position, Star>,
 }
 
+#[derive(Debug)]
+pub struct GalaxySettings {
+    pub stars_count: u32,
+    pub gravity: f32,
+    pub radius: f32,
+    pub arms_count: u8,
+    pub arm_spread: f32,
+    pub rotation_strength: f32,
+}
+
 impl Galaxy {
-    pub fn generate(
-        seed: &Seed,
-        stars_count: i32,
-        gravity: f32,
-        radius: f32,
-        arms_count: u8,
-        arm_spread: f32,
-        rotation_strength: f32,
-    ) -> Self {
+    pub fn generate(seed: &Seed, settings: &GalaxySettings) -> Self {
         let mut stars: BTreeMap<Position, Star> = BTreeMap::new();
         let mut rng: StdRng = SeedableRng::seed_from_u64(seed.0);
 
         for (class, ratio) in STAR_CLASS_DISTRIBUTION.iter() {
-            for _ in 0..(stars_count as f32 * *ratio).round() as i32 {
-                let position = Galaxy::random_star_position(
-                    &mut rng,
-                    gravity,
-                    radius,
-                    arms_count,
-                    arm_spread,
-                    rotation_strength,
-                );
-
+            for _ in 0..(settings.stars_count as f32 * *ratio).round() as i32 {
+                let position = Galaxy::random_star_position(&mut rng, settings);
                 let star = Star::from_class(&mut rng, *class);
 
                 stars.insert(position, star);
@@ -69,16 +63,9 @@ impl Galaxy {
         Self { stars }
     }
 
-    fn random_star_position(
-        rng: &mut StdRng,
-        gravity: f32,
-        radius: f32,
-        arms_count: u8,
-        arm_spread: f32,
-        rotation_strength: f32,
-    ) -> Position {
+    fn random_star_position(rng: &mut StdRng, settings: &GalaxySettings) -> Position {
         let mut v;
-        let arm_divisor = PI / arms_count as f32;
+        let arm_divisor = PI / settings.arms_count as f32;
         let mut iterations = 1;
 
         loop {
@@ -89,17 +76,17 @@ impl Galaxy {
             // Get a random direction, then take the position at `distance` from the galaxy center, in this direction,
             // taking the gravity setting into account.
             v = Vec2::new(rng.gen_range(-1.0..1.0), rng.gen_range(-1.0..1.0)).normalize()
-                * distance.powf(gravity);
+                * distance.powf(settings.gravity);
 
             let d = v.x.atan2(v.y);
 
-            for i in 1..=arms_count {
+            for i in 1..=settings.arms_count {
                 // Map arm "i" to a circle radius from -PI to PI
-                let j = (i - 1) as f32 * (PI + PI) / (arms_count - 1) as f32 - PI;
+                let j = (i - 1) as f32 * (PI + PI) / (settings.arms_count - 1) as f32 - PI;
 
                 // Validate the position if it's somewhere close to the arm direction,
                 // more or less depending on the arm spread setting.
-                if d > j && d < j + arm_divisor * arm_spread {
+                if d > j && d < j + arm_divisor * settings.arm_spread {
                     valid = true;
                     break;
                 }
@@ -111,10 +98,10 @@ impl Galaxy {
             iterations += 1;
         }
 
-        v = Mat3::from_rotation_z(-v.length() * rotation_strength).transform_vector2(v);
+        v = Mat3::from_rotation_z(-v.length() * settings.rotation_strength).transform_vector2(v);
         Position {
-            x: (v.x * radius).round() as i32,
-            y: (v.y * radius).round() as i32,
+            x: (v.x * settings.radius).round() as i32,
+            y: (v.y * settings.radius).round() as i32,
         }
     }
 }
