@@ -17,14 +17,15 @@ fn spawn_galaxy(mut commands: Commands, seed: Res<Seed>) {
     let galaxy = Galaxy::generate(
         &seed,
         &GalaxySettings {
-            stars_count: 100_000,
+            stars_count: 50_000,
             gravity: 2.0,
             radius: 800.0,
-            arms_count: 8,
+            arms_count: 7,
             arm_spread: 0.1,
             rotation_strength: 8.0,
         },
     );
+
 
     for (position, star) in galaxy.stars {
         let shape = shapes::Circle {
